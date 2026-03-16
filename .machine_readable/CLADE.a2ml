@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# Clade declaration — part of the gv-clade-index registry
+# See: https://github.com/hyperpolymath/gv-clade-index
+
+[identity]
+uuid = "a5fe1198-d318-59f8-bde8-650cbb733a4f"
+primary-forge = "github"
+primary-owner = "hyperpolymath"
+canonical-name = "JuliaKids.jl"
+prefixed-name = "dx-JuliaKids.jl"
+
+[clade]
+primary = "dx"
+secondary = []
+assigned = "2026-03-16"
+rationale = ""
+
+[forges]
+github = "hyperpolymath/JuliaKids.jl"
+gitlab = "hyperpolymath/JuliaKids.jl"
+bitbucket = "hyperpolymath/JuliaKids.jl"
+
+[lineage]
+type = "standalone"
+parent = "Julia package — educational Julia for children"
+born = "2026-03-16"
