@@ -4,7 +4,7 @@
 ============================================================================
 TEMPLATE INSTRUCTIONS (delete this block before publishing)
 ============================================================================
-Replace all {{PLACEHOLDER}} values:
+Replace all JuliaKids.jl values:
   JuliaKids.Jl     - Your project name
   hyperpolymath            - GitHub/GitLab username or org
   JuliaKids.jl             - Repository name
