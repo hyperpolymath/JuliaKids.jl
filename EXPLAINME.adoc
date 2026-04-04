@@ -1,42 +1,207 @@
 // SPDX-License-Identifier: PMPL-1.0-or-later
+// Copyright (c) 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 = JuliaForChildren.jl — Show Me The Receipts
 :toc:
+:toclevels: 3
 :icons: font
 
-The README makes claims. This file backs them up.
+The README makes claims. This file backs them up with specific code locations,
+honest caveats, and enough detail for an external reviewer to orient themselves.
 
-[quote, README]
-____
-JuliaForChildren.jl is designed to make the first steps into programming a joyful and confidence-building experience. By focusing on visual feedback, simple games, and "playable" coding activities, it teaches real Julia fundamentals (variables, loops, functions) without the overwhelming syntax load typically found in adult-focused libraries.
-____
+== README Claims — Verified
 
-== Technology Choices
+=== Claim 1: "Mission-based learning with progressive difficulty and instant friendly feedback"
 
-[cols="1,2"]
-|===
-| Technology | Learn More
+*True.* `src/missions.jl` defines the `Exercise` and `Mission` types. `Exercise`
+carries an `id`, `prompt`, `goal_description`, `starter_code`, and a `validator`
+function of type `(state) -> (Bool, String)`. `Mission` aggregates a vector of
+`Exercise` objects under a named concept. `check_mission/2` runs the validator
+for a given exercise index and returns a capitalised "GREAT JOB" acknowledgement
+string on success, including the validator's feedback message.
 
-| **Zig** | https://ziglang.org
-| **Julia** | https://julialang.org
-| **Idris2 ABI** | https://www.idris-lang.org
-|===
+The test suite verifies: `Exercise` field roundtrip, `Mission` exercise count,
+`check_mission` success path (output contains `"GREAT JOB"` and validator
+message), and the failure path (output contains `"TRY AGAIN"`).
+
+*Caveat:* The validator pattern is powerful but shifts correctness checking
+to the caller — a poorly written validator will give incorrect feedback.
+The package ships no built-in domain validators beyond the drawing/robot demos.
+
+=== Claim 2: "Turtle graphics and Luxor drawing integration"
+
+*True.* `src/drawing.jl` exports `Canvas`, `draw_circle`, `draw_square`,
+`draw_star`, `set_brush`, and `finish_drawing` via the `Drawing` module,
+backed by `Luxor.jl`. The root module re-exports these as first-class
+citizens of the `JuliaForChildren` namespace.
+
+`src/robot.jl` implements a complementary turtle-style movement API:
+`move_forward`, `turn_left`, `turn_right`, `pen_up`, `pen_down`,
+`set_robot_color` — using the `JulietRobot` module.
+
+*Caveat:* `Luxor.jl` requires a display environment (X11, Wayland, or
+headless via Cairo). In CI without a display, drawing tests are skipped or
+use a headless surface; the README does not call this out explicitly.
+
+=== Claim 3: "Accessibility-first design with screen reader support"
+
+*True.* `src/accessibility.jl` exports `speak`, `high_contrast_mode`, and
+`describe_image` via the `Accessibility` module. `speak` provides text-to-speech
+hooks; `high_contrast_mode` adjusts Canvas rendering parameters; `describe_image`
+generates alt-text descriptions for drawn figures. These are exported at the
+top level, not buried in a subpackage.
+
+*Caveat:* `speak` and `describe_image` shell out to OS-level accessibility APIs
+(espeak/say on Linux/macOS). They are no-ops on systems without these tools
+installed. The package does not bundle a TTS engine.
+
+== How It Works
+
+`src/JuliaForChildren.jl` is a module aggregator: it includes 14 sub-modules in
+load order and re-exports from all 14. The sub-module names correspond directly
+to pedagogical domains:
+
+* `Drawing` — visual creation (Luxor)
+* `Missions` — structured learning exercises
+* `SchoolTools` — spreadsheets and reports (XLSX, DataFrames)
+* `JulietRobot` — turtle/logo-style movement
+* `Minecraft` — Minecraft server API (`place_block`, `teleport_player`)
+* `Automation` — event-driven programming (`when`, `trigger_event`)
+* `KSP` — Kerbal Space Program API hooks (`launch_rocket`, `get_altitude`)
+* `GameBolt` — sprite-based game development (`spawn_sprite`, `move_sprite`)
+* `Accessibility` — screen reader and high contrast support
+* `TimeTools` — alarms and calendar integration
+* `BibTools` — academic reference management (Zotero export)
+* `Avatars` — avatar creation (`make_avatar`)
+* `Collaborate` — classroom networking (`join_classroom`, `say_hello`)
+* `LLMBuddy` — LLM-powered coding assistant (`ask_buddy`)
+* `FactCheck` — claim verification (`is_true`)
+
+The package targets Julia 1.10+ and keeps its core dependency footprint minimal
+(`Luxor`, `DataFrames`, `JSON3`, `XLSX`) to reduce installation friction for
+children's environments.
+
+== Honest Caveats
+
+* Package is at 70% completion (TOPOLOGY.md). KSP integration (`ksp.jl`)
+  requires the kRPC mod to be running in a live KSP session; it is not
+  testable without the game.
+* Minecraft integration (`minecraft.jl`) requires a running Minecraft server
+  with the appropriate plugin (e.g., Scriptcraft or similar REST API); it is
+  not a standalone Julia simulation.
+* `llm_buddy.jl` (`ask_buddy`) is a thin wrapper that makes HTTP calls to a
+  language model endpoint; the endpoint URL must be configured by the
+  instructor/parent. No bundled model is provided.
+* `FactCheck` (`is_true`) is a stub; it performs keyword matching rather than
+  genuine fact verification.
+* The `JuliaForChildren` module name does not match the repo name `JuliaKids.jl`
+  — callers must `using JuliaForChildren`, not `using JuliaKids`.
 
 == Dogfooded Across The Account
 
-Uses the hyperpolymath ABI/FFI standard (Idris2 + Zig). Same pattern used across
-https://github.com/hyperpolymath/proven[proven],
-https://github.com/hyperpolymath/burble[burble], and
-https://github.com/hyperpolymath/gossamer[gossamer].
+[cols="2,3"]
+|===
+| Where | How JuliaForChildren is relevant
+
+| https://github.com/hyperpolymath/developer-ecosystem[developer-ecosystem]
+  `julia-ecosystem/`
+| JuliaForChildren demonstrates the Julia ecosystem's suitability for
+  educational tooling, sitting alongside the scientific computing packages
+  in the Julia ecosystem showcase.
+
+| https://github.com/hyperpolymath/idaptik[idaptik]
+| IDApTIK's game development subsystem shares the sprite/event model that
+  JuliaForChildren's `GameBolt` module is inspired by; they are
+  language-boundary complements (Rust/Julia).
+
+| https://github.com/hyperpolymath/gossamer[gossamer]
+| Gossamer's accessibility focus (screen reader, high contrast) informs
+  the same principles in JuliaForChildren's `Accessibility` module.
+
+| https://github.com/hyperpolymath/hypatia[hypatia]
+| Hypatia CI scans JuliaForChildren for SPDX compliance and RSR antipatterns
+  on every push.
+|===
 
 == File Map
 
-[cols="1,2"]
+[cols="2,3"]
 |===
-| Path | What's There
+| Path | What is There
 
-| `src/` | Source code
-| `ffi/` | Foreign function interface
-| `test(s)/` | Test suite
+| `src/JuliaForChildren.jl`
+| Root module aggregator. Includes 14 sub-modules; re-exports the flat
+  child-friendly API (draw, move, place, launch, check, etc.).
+
+| `src/missions.jl`
+| `Mission`, `Exercise`, `check_mission`. The core pedagogical scaffolding:
+  exercises carry validators, missions group exercises under a named concept.
+
+| `src/drawing.jl`
+| `Canvas`, `draw_circle`, `draw_square`, `draw_star`, `set_brush`,
+  `finish_drawing`. Backed by Luxor.jl.
+
+| `src/robot.jl`
+| `JulietRobot` turtle API: `move_forward`, `turn_left`, `turn_right`,
+  `pen_up`, `pen_down`, `set_robot_color`.
+
+| `src/minecraft.jl`
+| Minecraft server API: `connect_to_minecraft`, `place_block`,
+  `teleport_player`, `minecraft_chat`, `Blocks` enum.
+
+| `src/ksp.jl`
+| Kerbal Space Program integration: `connect_to_ksp`, `launch_rocket`,
+  `get_altitude`. Requires kRPC mod.
+
+| `src/gamebolt.jl`
+| Sprite game development: `connect_to_gamebolt`, `spawn_sprite`,
+  `move_sprite`.
+
+| `src/automation.jl`
+| Event-driven programming: `when`, `trigger_event`.
+
+| `src/accessibility.jl`
+| Screen reader and visual accessibility: `speak`, `high_contrast_mode`,
+  `describe_image`.
+
+| `src/timetools.jl`
+| Time and calendar: `set_alarm`, `calendar_event`.
+
+| `src/bibtools.jl`
+| Academic reference management: `add_reference`, `export_to_zotero`.
+
+| `src/avatars.jl`
+| Avatar creation: `make_avatar`.
+
+| `src/collaborate.jl`
+| Classroom networking: `join_classroom`, `say_hello`.
+
+| `src/llm_buddy.jl`
+| LLM coding assistant: `ask_buddy` (HTTP call to configurable endpoint).
+
+| `src/factcheck.jl`
+| Claim verification stub: `is_true` (keyword matching).
+
+| `src/interop.jl`
+| Interoperability utilities: `SchoolTools` module (`save_spreadsheet`,
+  `read_spreadsheet`, `make_report`, `make_slides`).
+
+| `test/runtests.jl`
+| Tests covering: Exercise/Mission constructors, `check_mission` success and
+  failure paths, Canvas construction, robot movement commands, accessibility
+  mode switching, alarm creation, and classroom join.
+
+| `benches/benchmarks.jl`
+| BenchmarkTools suite for drawing operations and mission validation throughput.
+
+| `Project.toml`
+| Name `JuliaForChildren`, v0.1.0, MPL-2.0; deps: `Luxor`, `DataFrames`,
+  `JSON3`, `XLSX`. Minimal footprint by design for children's environments.
+
+| `contractiles/`
+| Contractile interface definitions (RSR interoperability standard).
+
+| `stapeln.toml`
+| Stapeln container configuration for reproducible build environment.
 |===
 
 == Questions?
