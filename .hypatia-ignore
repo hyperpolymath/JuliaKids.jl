@@ -22,4 +22,3 @@
 # Inventory taken 2026-08-06 across all 424 estate repositories.
 # Files covered: 1 rescript
 
-cicd_rules/banned_language_file:examples/SafeDOMExample.res
